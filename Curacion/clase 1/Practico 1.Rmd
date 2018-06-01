@@ -1,0 +1,55 @@
+---
+title: "Practico 1"
+output: pdf_document
+---
+***
+## Practico 1: Entregar un Rmd donde se encuentren todos los vuelos que:
+
+```{r echo=TRUE}
+library(nycflights13)
+fligths<-nycflights13::flights
+```
+***
+
+***
+- Que arribaron con un retraso de mas de dos horas.
+```{r echo=TRUE}
+subset(flights,  subset= flights$arr_delay > 120)
+```
+***
+
+***
+- Volaron hacia Houston (IAH o HOU)
+```{r echo=TRUE}
+subset(flights,  subset= flights$dest %in% c('IAH', 'HOU'))
+```
+***
+
+***
+- Fueron operados por United, American o Delta.
+```{r echo=TRUE}
+subset(flights,  subset= flights$carrier %in% c('UA', 'AA', 'DL'))
+```
+***
+
+***
+- Salieron en Verano (Julio, Agosto y Septiembre)
+```{r echo=TRUE}
+subset(flights,  subset= flights$month >= 7 & flights$month < 10)
+```
+***
+
+***
+- Arrivaron mas de dos horas tarde, pero salieron bien.
+```{r echo=TRUE}
+subset(flights,  subset= flights$arr_delay > 120 & flights$dep_delay <= 10)
+```
+***
+
+***
+- Salieron entre medianoche y las 6 am.
+```{r echo=TRUE}
+subset(flights,  subset= flights$dep_time <= 600 & flights$dep_time > 0)
+```
+***
+

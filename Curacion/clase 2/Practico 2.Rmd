@@ -1,0 +1,175 @@
+---
+title: "Practico 2"
+author: "Oviedo"
+date: "5/31/2018"
+output: html_document
+---
+***
+## Practico 2: Entregar un Rmd donde se:
+
+- Elija un dataset clasificado de su preferencia y area (domain expertise), aplique un metodo de clustering y/o mixtura de Gaussianas en el mismo.
+
+# Prediciendo manos de Poker
+
+```{r}
+library(class)
+library(gmodels)
+library(ggplot2)
+
+set.seed(6)
+```
+
+## 
+```{r echo=TRUE}
+# Seeds
+# https://archive.ics.uci.edu/ml/datasets/Poker+Hand
+# Each record is an example of a hand consisting of five playing cards drawn from a standard deck of 52. Each card is described using two attributes (suit and rank), for a total of 10 predictive attributes. There is one Class attribute that describes the "Poker Hand". The order of cards is important, which is why there are 480 possible Royal Flush hands as compared to 4 (one for each suit - explained in [Web Link]).
+data <- read.csv(file="https://archive.ics.uci.edu/ml/machine-learning-databases/poker/poker-hand-testing.data", header=FALSE, sep=",")
+```
+
+### Vemos un par de filas
+
+```{r}
+head(data)
+```
+
+#### Explicación de las columnas (tomado de la fuente de datos)
+1) S1 "Suit of card #1" 
+Ordinal (1-4) representing {Hearts, Spades, Diamonds, Clubs} 
+
+2) C1 "Rank of card #1" 
+Numerical (1-13) representing (Ace, 2, 3, ... , Queen, King) 
+
+3) S2 "Suit of card #2" 
+Ordinal (1-4) representing {Hearts, Spades, Diamonds, Clubs} 
+
+4) C2 "Rank of card #2" 
+Numerical (1-13) representing (Ace, 2, 3, ... , Queen, King) 
+
+5) S3 "Suit of card #3" 
+Ordinal (1-4) representing {Hearts, Spades, Diamonds, Clubs} 
+
+6) C3 "Rank of card #3" 
+Numerical (1-13) representing (Ace, 2, 3, ... , Queen, King) 
+
+7) S4 "Suit of card #4" 
+Ordinal (1-4) representing {Hearts, Spades, Diamonds, Clubs} 
+
+8) C4 "Rank of card #4" 
+Numerical (1-13) representing (Ace, 2, 3, ... , Queen, King) 
+
+9) S5 "Suit of card #5" 
+Ordinal (1-4) representing {Hearts, Spades, Diamonds, Clubs} 
+
+10) C5 "Rank of card 5" 
+Numerical (1-13) representing (Ace, 2, 3, ... , Queen, King) 
+
+11) CLASS "Poker Hand" 
+Ordinal (0-9) 
+
+0: Nothing in hand; not a recognized poker hand 
+1: One pair; one pair of equal ranks within five cards 
+2: Two pairs; two pairs of equal ranks within five cards 
+3: Three of a kind; three equal ranks within five cards 
+4: Straight; five cards, sequentially ranked with no gaps 
+5: Flush; five cards with the same suit 
+6: Full house; pair + different rank three of a kind 
+7: Four of a kind; four equal ranks within five cards 
+8: Straight flush; straight + flush 
+9: Royal flush; {Ace, King, Queen, Jack, Ten} + flush 
+
+## Graficamos el número de manos por tipo
+```{r}
+ggplot(data) + stat_function(aes(data$V11),fun=dexp)
+```
+
+Como podemos ver, la distribución de la información se asemeja a una función exponencial.
+
+# Analizamos el resumen de los datos
+```{r}
+summary(data)
+```
+
+# Separamos los sets para entrenamiento y testeo
+```{r}
+# Para entrenar al clasificador, el data set provee los siguientes registros
+# https://archive.ics.uci.edu/ml/machine-learning-databases/poker/poker-hand-training-true.data
+
+# Sin embargo, por una cuestión de cantidad vamos a utilizar el 80% de la data y para testear el 20% remanente
+nr_rows <- nrow(data)
+partition_index = ceiling(nr_rows*0.8)
+train_indexes = 1:partition_index
+test_indexes = (partition_index + 1):nr_rows
+
+# Pick the labels for the test and train sets
+data_train_labels <- data[train_indexes,11]
+data_test_labels  <- data[test_indexes,11]
+table(data_train_labels)
+table(data_test_labels)
+
+data_train <- data[train_indexes,]
+data_test  <- data[test_indexes,]
+
+
+```
+
+# Escogiendo el mejor K
+
+Luego de haber entrenado el clasificador con datos aleatorios, podemos proceder al análisis del parámetro K. Es importante saber que para este punto vamos a utilizar el algoritmo kNN con diferentes valores a fin de determinar qué valor de K se ajusta mejor.
+
+## Se deben tener en cuenta dos características principales:
+* Si K es muy pequeño el modelo será muy sentitivo a
+puntos que son atípicos o que son ruido (datos
+corruptos)
+* Si K es muy grande, el modelo tiende a asignar
+siempre a la clase más grande.
+
+Como regla general, entonces, se suele tomar como base la raíz cuadrada de la cantidad de variables, e iterar para ver qué parámetro se ajusta mejor.
+```{r}
+best_K = 11^(0.5)
+best_K
+```
+
+Por esto, debido a que la cantidad de variables es 11, se comenzará el analisis tomando el valor 3 para K.
+
+## K = 3
+
+```{r}
+data_test_pred_k3 <- knn(train=data_train, test=data_test, cl=data_train_labels, k=3)
+CrossTable(x=data_test_labels, y=data_test_pred_k3, prop.chisq = FALSE)
+
+```
+
+## K = 5
+
+```{r}
+data_test_pred_k5 <- knn(train=data_train, test=data_test, cl=data_train_labels, k=5)
+CrossTable(x=data_test_labels, y=data_test_pred_k5, prop.chisq = FALSE)
+```
+
+## K = 7
+
+```{r}
+data_test_pred_k7 <- knn(train=data_train, test=data_test, cl=data_train_labels, k=7)
+CrossTable(x=data_test_labels, y=data_test_pred_k7, prop.chisq = FALSE)
+```
+
+## K = 15
+
+```{r}
+data_test_pred_k15 <- knn(train=data_train, test=data_test, cl=data_train_labels, k=15)
+CrossTable(x=data_test_labels, y=data_test_pred_k15, prop.chisq = FALSE)
+```
+# Conclusión
+Vemos después de todo esto, que para valores de K entre 5 y 15, los resultados se asemejan bastasnte.
+
+Finalmente con K = 3 se obtiene el mejor resultado. Esto se debe en parte a la naturaleza del dataset. Tiene las siguiente ventajas:
+ - Los datos están curados
+ - Es un dataset balanceado según la realidad de probabilidades de ocurrencia según el tipo.
+ - Los valores de los atributos son numéricos
+ - No hay valores nulos (Nan)
+
+Podemos determinar después de todo esto que la regla general (de la raíz cuadrada), produjo los resultados óptimos, sin embargo es importante destacar que no siempre es el valor final, sino solo el comienzo. El valor del parámetro K debe ser estudiado y analizado a fin de determinar el mejor valor segun la distribucion de los datos.
+
+Es importante destacar también que los datos de este set estaban normalizados. De no haber estado de ésta manera, hubiera sido un paso vital a fin de prevenir comportamientos negativos debido a valores muy alejados. Normalizar sirve para que todas las variables aporten equitativamente a la fórmula de la distancia, de esta manera evitamos grupos demasiado grandes.
+
